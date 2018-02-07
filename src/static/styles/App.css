@@ -1,0 +1,52 @@
+@import 'normalize.css';
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: sans-serif;
+}
+#root {
+  height: 100%;
+}
+
+.bp-table-container:focus {
+  outline: none;
+}
+
+.bp-table-column-name {
+  font-weight: bold;
+  font-size: 10px;
+}
+
+.bp-table-truncated-text {
+  height: 100%;
+}
+
+.bp-table-column-name-text {
+  pointer-events: all;
+}
+
+.bp-table-row-headers-cells-container {
+  display: none;
+}
+
+.bp-table-row-headers {
+  display: none;
+  width: 0;
+}
+
+.bp-table-editable-text {
+  display: flex;
+  align-items: center;
+}
+
+:focus {
+  outline: rgba(19, 124, 189, 0.5) auto 2px;
+  outline-offset: -3px;
+  -moz-outline-radius: 6px;
+}
