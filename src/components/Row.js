@@ -53,7 +53,7 @@ export default function defaultRowRenderer({
       style={style}
     >
       <div className={className}>
-      {columns}
+        {columns}
       </div>
       {collapsedRow}
     </div>

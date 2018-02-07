@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react';
-import { Grid, ScrollSync, AutoSizer, ArrowKeyStepper, Table, Column, ColumnSizer, MultiGrid } from 'react-virtualized';
-import { css, cx } from 'react-emotion';
+import { ScrollSync, ArrowKeyStepper, Table, Column } from 'react-virtualized';
+import styled, { css } from 'react-emotion';
 import 'react-virtualized/styles.css';
 
 import Row from './Row';
@@ -24,6 +24,26 @@ const styles = {
   `,
 };
 
+const ExpandedRow = styled('div')`
+  height: 0;
+  overflow: auto;
+  background: #f1f1f1;
+  ${({ isExpanded }) => isExpanded && css`
+    height: 40px;
+  `}
+`;
+
+const Hack = styled('div')`
+  z-index: 100;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  will-change: transform;
+`;
+
 export default class TableView extends PureComponent {
   constructor(props, context) {
     super(props, context);
@@ -33,7 +53,12 @@ export default class TableView extends PureComponent {
       fixedRowCount: 1,
       scrollToColumn: -1,
       scrollToRow: -1,
+      data,
+      expandedRows: new Set(),
     };
+
+    this.table1 = null;
+    this.table2 = null;
   }
 
   onSelectCell = ({ scrollToColumn, scrollToRow }) => {
@@ -41,13 +66,54 @@ export default class TableView extends PureComponent {
   };
 
   rowGetter = ({ index }) => {
-    return data[index];
+    return this.state.data[index];
   }
 
   rowRenderer = (props) => {
+    console.log('rendered');
     return (
-      <Row {...props} />
+      <Row
+        {...props}
+        collapsedRow={
+          <ExpandedRow isExpanded={this.state.expandedRows.has(props.index)}>hihihi</ExpandedRow>
+        }
+      />
     );
+  }
+
+  onSizeButtonClick = (rowIndex) => {
+    return () => {
+      const newExpandedRows = new Set(this.state.expandedRows);
+
+      if (newExpandedRows.has(rowIndex)) {
+        newExpandedRows.delete(rowIndex);
+      } else {
+        newExpandedRows.add(rowIndex);
+      }
+
+      this.table1.forceUpdate();
+      this.table2.forceUpdate();
+      this.table1.recomputeRowHeights();
+      this.table2.recomputeRowHeights();
+
+      this.setState({
+        expandedRows: newExpandedRows,
+      });
+    }
+  }
+
+  itemCellRenderer = (props) => {
+    const itemCell = () => {
+      return (
+        <div>
+          <span>{this.state.data[props.rowIndex].name}</span>
+          <img src={this.state.data[props.rowIndex].image} />
+          <button onClick={this.onSizeButtonClick(props.rowIndex)}>sizes</button>
+        </div>
+      )
+    }
+
+    return <this.defaultCellRenderer {...props} cellData={itemCell()} />
   }
 
   indexCellRenderer = (props) => {
@@ -69,6 +135,14 @@ export default class TableView extends PureComponent {
     );
   }
 
+  getRowHeight = ({ index }) => {
+    if(this.state.expandedRows.has(index)) {
+      return 60;
+    }
+
+    return 30;
+  }
+
   render() {
     return (
       <ScrollSync>
@@ -79,17 +153,19 @@ export default class TableView extends PureComponent {
             isControlled={true}
             onScrollToChange={this.onSelectCell}
             mode={'cells'}
-            rowCount={data.length}
+            rowCount={this.state.data.length}
             scrollToColumn={this.state.scrollToColumn}
             scrollToRow={this.state.scrollToRow}
           >
             {({ onSectionRendered, scrollToColumn, scrollToRow }) => (
               <div>
+                <Hack />
                 <p>
                   {`Most-recently-stepped column: ${scrollToColumn}, row: ${scrollToRow}`}
                 </p>
                 <div style={{ display: 'flex' }}>
                   <Table
+                    ref={(ref) => { this.table1 = ref; }}
                     width={300}
                     height={300}
                     onSectionRendered={onSectionRendered}
@@ -97,8 +173,8 @@ export default class TableView extends PureComponent {
                     scrollToRow={scrollToRow}
                     scrollToIndex={scrollToRow}
                     headerHeight={20}
-                    rowHeight={30}
-                    rowCount={data.length}
+                    rowHeight={this.getRowHeight}
+                    rowCount={this.state.data.length}
                     rowGetter={this.rowGetter}
                     rowRenderer={this.rowRenderer}
                     scrollTop={scrollTop}
@@ -113,29 +189,31 @@ export default class TableView extends PureComponent {
                     />
                     <Column
                       label='Name'
-                      dataKey='name'
                       width={100}
-                      cellRenderer={this.defaultCellRenderer}
+                      cellRenderer={this.itemCellRenderer}
                     />
                   </Table>
 
 
                   <div style={{ overflow: 'auto '}}>
                     <Table
-                      width={1000}
+                      ref={(ref) => { this.table2 = ref; }}
+                      width={1600}
                       height={300}
                       onSectionRendered={onSectionRendered}
                       scrollToColumn={scrollToColumn}
                       scrollToRow={scrollToRow}
                       scrollToIndex={scrollToRow}
                       headerHeight={20}
-                      rowHeight={30}
-                      rowCount={data.length}
+                      rowHeight={this.getRowHeight}
+                      rowCount={this.state.data.length}
                       rowGetter={this.rowGetter}
                       rowRenderer={this.rowRenderer}
                       scrollTop={scrollTop}
                       onScroll={onScroll}
                     >
+                      <Column />
+                      <Column />
                       <Column
                         width={200}
                         label='SKU'
